@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O Gauchão - Cardápio Interativo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f3e9; /* Cor de fundo clara inspirada no PDF */
+            color: #333;
+        }
+        .header-bg {
+            background-color: #8B0000; /* Vermelho escuro, inspirado no logo */
+            color: white;
+        }
+        .category-button {
+            background-color: #DAA520; /* Dourado, inspirado no logo */
+            color: #8B0000;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+        .category-button:hover {
+            background-color: #B8860B; /* Dourado mais escuro no hover */
+            transform: translateY(-2px);
+        }
+        .product-card {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+            cursor: pointer; /* Indica que o card é clicável */
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+        .price {
+            color: #8B0000; /* Vermelho escuro para o preço */
+            font-weight: bold;
+        }
+        .active-category {
+            background-color: #B8860B; /* Dourado mais escuro para categoria ativa */
+            color: white;
+        }
+        /* Custom modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="header-bg py-6 shadow-lg">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-4xl font-bold mb-2">O GAUCHÃO</h1>
+            <p class="text-xl">Seu Açougue de Confiança</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <h2 class="text-3xl font-bold text-center mb-8 text-gray-800">Nosso Cardápio</h2>
+
+        <!-- Category Buttons -->
+        <div class="flex flex-wrap justify-center gap-4 mb-8">
+            <button class="category-button px-6 py-3 rounded-full shadow-md text-lg font-semibold" data-category="aves">Aves</button>
+            <button class="category-button px-6 py-3 rounded-full shadow-md text-lg font-semibold" data-category="suino">Suíno</button>
+            <button class="category-button px-6 py-3 rounded-full shadow-md text-lg font-semibold" data-category="bovino">Bovino</button>
+            <button class="category-button px-6 py-3 rounded-full shadow-md text-lg font-semibold" data-category="carnes-de-sol">Carnes de Sol</button>
+            <button class="category-button px-6 py-3 rounded-full shadow-md text-lg font-semibold" data-category="carnes-in-natura">Carnes In Natura</button>
+            <button class="category-button px-6 py-3 rounded-full shadow-md text-lg font-semibold" data-category="outras-delicias">Outras Delícias</button>
+        </div>
+
+        <!-- Product List -->
+        <div id="product-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Products will be loaded here by JavaScript -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="header-bg py-4 mt-8">
+        <div class="container mx-auto px-4 text-center text-sm">
+            <p>(31) 9 9292-0996 | @ogauchaocarnes</p>
+            <p>&copy; 2023 O Gauchão. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Custom Modal for messages -->
+    <div id="customModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="document.getElementById('customModal').style.display='none'">&times;</span>
+            <p id="modalMessage" class="text-lg font-semibold"></p>
+            <button onclick="document.getElementById('customModal').style.display='none'" class="mt-4 px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // Function to show custom modal
+        function showCustomModal(message) {
+            document.getElementById('modalMessage').innerText = message;
+            document.getElementById('customModal').style.display = 'flex';
+        }
+
+        const products = {
+            "aves": [
+                { name: "Filé de frango inteiro", price: "R$ 29,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=Fil%C3%A9+de+Frango" },
+                { name: "Filé de frango em bifes", price: "R$ 32,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=Fil%C3%A9+de+Frango+Bifes" },
+                { name: "Filé de frango para strogonoff", price: "R$ 32,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=Frango+Strogonoff" },
+                { name: "Almôndega de frango", price: "R$ 56,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=Alm%C3%B4ndega+Frango" },
+                { name: "Coxinha da asa", price: "R$ 23,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=Coxinha+Asa" },
+                { name: "Sobrecoxa de frango", price: "R$ 19,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=Sobrecoxa+Frango" }
+            ],
+            "suino": [
+                { name: "Costelinha suína", price: "R$ 34,90/kg", image: "https://placehold.co/400x250/8B0000/DAA520?text=Costelinha+Su%C3%ADna" },
+                { name: "Pernil suíno fatiado", price: "R$ 29,40/kg", image: "https://placehold.co/400x250/8B0000/DAA520?text=Pernil+Su%C3%ADno" },
+                { name: "Bife de lombo", price: "R$ 32,90/kg", image: "https://placehold.co/400x250/8B0000/DAA520?text=Bife+de+Lombo" },
+                { name: "Linguiça suína especial", price: "R$ 39,90/kg", image: "https://placehold.co/400x250/8B0000/DAA520?text=Lingui%C3%A7a+Su%C3%ADna" },
+                { name: "Costelinha suína temperada", price: "R$ 39,90/kg", image: "https://placehold.co/400x250/8B0000/DAA520?text=Costelinha+Temp." },
+                { name: "Lombo suíno temperado", price: "R$ 36,90/kg", image: "https://placehold.co/400x250/8B0000/DAA520?text=Lombo+Temp." },
+                { name: "Pernil suíno temperado", price: "R$ 34,90/kg", image: "https://placehold.co/400x250/8B0000/DAA520?text=Pernil+Temp." }
+            ],
+            "bovino": [
+                { name: "Carne moída bovina patinho", price: "R$ 52,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=Carne+Mo%C3%ADda+Patinho" },
+                { name: "Carne moída bovina acém", price: "R$ 49,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=Carne+Mo%C3%ADda+Ac%C3%A9m" },
+                { name: "Carne p/ cozinhar bovina músculo", price: "R$ 42,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=M%C3%BAsculo+Bovino" },
+                { name: "Carne p/ cozinhar bovina miolo de acém", price: "R$ 49,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=Miolo+de+Ac%C3%A9m" },
+                { name: "Bife de boi contra filé", price: "R$ 74,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=Contra+Fil%C3%A9" },
+                { name: "Bife de boi filé mignon", price: "R$ 92,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=Fil%C3%A9+Mignon" },
+                { name: "Almôndega bovina", price: "R$ 59,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=Alm%C3%B4ndega+Bovina" },
+                { name: "Filé mignon bovino s/ cordão inteiro", price: "R$ 89,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=Fil%C3%A9+Mignon+Inteiro" },
+                { name: "Filé mignon bovino strogonoff", price: "R$ 92,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=Fil%C3%A9+Mignon+Strog." }
+            ],
+            "carnes-de-sol": [
+                { name: "Carne de sol de alcatra", price: "R$ 76,90/kg", image: "https://placehold.co/400x250/8B0000/DAA520?text=Carne+de+Sol+Alcatra" },
+                { name: "Carne de sol de contra filé", price: "R$ 89,90/kg", image: "https://placehold.co/400x250/8B0000/DAA520?text=Carne+de+Sol+Contra" },
+                { name: "Carne de sol da maminha", price: "R$ 76,90/kg", image: "https://placehold.co/400x250/8B0000/DAA520?text=Carne+de+Sol+Maminha" },
+                { name: "Carne de sol de picanha", price: "R$ 149,90/kg", image: "https://placehold.co/400x250/8B0000/DAA520?text=Carne+de+Sol+Picanha" }
+            ],
+            "carnes-in-natura": [
+                { name: "Picanha in natura", price: "R$ 129,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=Picanha+In+Natura" },
+                { name: "Chorizo in natura", price: "R$ 76,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=Chorizo+In+Natura" },
+                { name: "Maminha in natura", price: "R$ 69,90/kg", image: "https://placehold.co/400x250/DAA520/8B0000?text=Maminha+In+Natura" }
+            ],
+            "outras-delicias": [
+                { name: "Coxinha temperada (pct)", price: "R$ 27,90", image: "https://placehold.co/400x250/8B0000/DAA520?text=Coxinha+Temp." },
+                { name: "Coxinha marinada c/ mostarda e mel (pct)", price: "R$ 27,90", image: "https://placehold.co/400x250/8B0000/DAA520?text=Coxinha+Mostarda" },
+                { name: "Coxa recheada c/ presunto e mussarela (pct)", price: "R$ 29,90", image: "https://placehold.co/400x250/8B0000/DAA520?text=Coxa+Recheada" },
+                { name: "Linguiça suína sabores - tradicional, pimenta biquinho e mussarela (pct)", price: "R$ 19,90", image: "https://placehold.co/400x250/8B0000/DAA520?text=Lingui%C3%A7a+Sabores" },
+                { name: "Filé de tilápia premium", price: "R$ 54,90/kg", image: "https://placehold.co/400x250/8B0000/DAA520?text=Fil%C3%A9+Til%C3%A1pia" }
+            ]
+        };
+
+        const productListDiv = document.getElementById('product-list');
+        const categoryButtons = document.querySelectorAll('.category-button');
+        const whatsappNumber = "5531992920996"; // Número do WhatsApp com código do país e DDD
+
+        // Function to display products based on category
+        function displayProducts(category) {
+            productListDiv.innerHTML = ''; // Clear current products
+            const selectedProducts = products[category];
+
+            if (selectedProducts) {
+                selectedProducts.forEach(product => {
+                    // Encode the message for the WhatsApp URL
+                    const message = encodeURIComponent(`Olá, gostaria de pedir ${product.name} - ${product.price}.`);
+                    const whatsappLink = `https://wa.me/${whatsappNumber}?text=${message}`;
+
+                    const productCard = `
+                        <a href="${whatsappLink}" target="_blank" class="product-card rounded-lg p-4 flex flex-col items-center text-center">
+                            <img src="${product.image}" alt="${product.name}" class="w-full h-40 object-cover rounded-md mb-4">
+                            <h3 class="text-xl font-semibold mb-2">${product.name}</h3>
+                            <p class="price text-2xl">${product.price}</p>
+                        </a>
+                    `;
+                    productListDiv.innerHTML += productCard;
+                });
+            } else {
+                showCustomModal("Nenhum produto encontrado para esta categoria.");
+            }
+        }
+
+        // Add event listeners to category buttons
+        categoryButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons
+                categoryButtons.forEach(btn => btn.classList.remove('active-category'));
+                // Add active class to the clicked button
+                button.classList.add('active-category');
+
+                const category = button.dataset.category;
+                displayProducts(category);
+            });
+        });
+
+        // Display 'Aves' by default on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelector('.category-button[data-category="aves"]').click();
+        });
+    </script>
+</body>
+</html>
